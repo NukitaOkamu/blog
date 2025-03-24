@@ -1,109 +1,134 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turning Text into SQL: A Python and LLM-Powered Approach</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            line-height: 1.6;
-            background-color: #f5f5f5;
-            color: #333;
-            margin: 0;
-            padding: 40px;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            font-size: 2.2em;
-            color: #1a3c5e;
-            border-bottom: 3px solid #1a3c5e;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        h2 {
-            font-size: 1.6em;
-            color: #2c5282;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
-        p {
-            margin: 15px 0;
-            font-size: 1.1em;
-        }
-        .filename {
-            font-family: 'Courier New', monospace;
-            background-color: #e2e8f0;
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: #2d3748;
-        }
-        a {
-            color: #3182ce;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Turning Text into SQL: A Python and LLM-Powered Approach</h1>
+# Text-to-SQL: Python and LLM-Powered Query Generation
 
-        <h2>Introduction</h2>
-        <p>Transforming natural language into SQL queries simplifies database access, relying on a clear grasp of table roles and relationships. This project blends Python, PL/SQL, and the Azure OpenAI API to convert text requests into precise SQL statements. By parsing PL/SQL routines, generating metadata, and leveraging embeddings, it creates a robust text-to-SQL system. This article guides developers through the steps, offering a framework to adapt for their own databases.</p>
+Transform natural language into precise Oracle SQL queries using Python, PL/SQL parsing, and the Azure OpenAI API. This project automates table analysis, generates rich metadata, and leverages embeddings for a robust text-to-SQL pipeline.
 
-        <h2>Project Overview</h2>
-        <p>The system takes a text query and produces a SQL statement, using Python for preprocessing, a database for metadata storage, and Azure OpenAI for analysis. The <span class="filename">AzureOpenAIClient</span> class (<span class="filename">azure_openai_client.py</span>) handles API interactions, utilizing gpt-4o-mini for descriptions, text-embedding-ada-002 for embeddings, and gpt-4o for query generation, with costs tracked and capped at $5 per script. Tailored for developers, it automates table analysis and delivers a complete text-to-SQL solution.</p>
+## Overview
 
-        <h2>Technical Breakdown</h2>
+This repository converts Slovenian text requests into executable SQL statements by:
+- Parsing PL/SQL routines to extract metadata.
+- Using Azure OpenAI (`gpt-4o`, `gpt-4o-mini`, `text-embedding-ada-002`) for descriptions, embeddings, and query generation.
+- Iteratively refining queries with foreign key relationships.
+- Logging outputs for analysis.
 
-        <h2>Preparing the Groundwork with PL/SQL Routine Extraction</h2>
-        <p><span class="filename">split_save_pkg.py</span> launches the pipeline by parsing PL/SQL package body files, splitting procedures and functions into individual .SQL files (stored in an output directory). Using regex and token counting, it isolates routine boundaries to support usage analysis.</p>
+Designed for developers, it offers a framework adaptable to any Oracle database with PL/SQL routines.
 
-        <h2>Storing Routine Metadata in the Database</h2>
-        <p><span class="filename">populate_rma.py</span> loads these routines into a metadata table, extracting key details by traversing the output directory. This centralizes PL/SQL logic for further querying.</p>
+## Features
 
-        <h2>Linking Tables to Routines with Usage Frequency</h2>
-        <p><span class="filename">populate_link_table_rte.py</span> scans routine bodies for table references (like FROM or JOIN clauses), counting occurrences and storing them in a usage table. This quantifies table importance, aiding later interpretation by the language model.</p>
+- **PL/SQL Parsing**: Extracts procedures/functions from package bodies.
+- **Metadata Generation**: Stores table usage, descriptions, and query examples in a database.
+- **Embeddings**: Enhances table selection with vector similarity.
+- **SQL Generation**: Produces implicit-syntax SELECT queries from natural language.
+- **Cost Management**: Caps Azure OpenAI API usage at $5 per script.
 
-        <h2>Setting Up the Database Schema</h2>
-        <p>A SQL script establishes core tables to hold metadata, evolving them with fields like table structure (DDL), descriptions, and embeddings. Populated from database sources, these tables connect raw data to LLM-generated outputs.</p>
+## Prerequisites
 
-        <h2>Generating Table Descriptions with Azure OpenAI</h2>
-        <p><span class="filename">pop_db_routine_table_usage_description.py</span> uses <span class="filename">AzureOpenAIClient</span> with gpt-4o-minicreate concise descriptions (2-4 sentences) for each table-routine pair, based on structure and routine logic. These are stored for later use.</p>
+- Python 3.9
+- Oracle Database (tested with `RAZVOJDB`)
+- Azure OpenAI API key and endpoint
+- Oracle Instant Client (e.g., `instantclient_23_7`)
 
-        <h2>Adding SQL Query Examples with Azure OpenAI</h2>
-        <p><span class="filename">pop_db_routine_table_usage_sql_example.py</span> generates SELECT-only queries and matching descriptions via <span class="filename">AzureOpenAIClient</span>, saving them to illustrate routine-specific table usage.</p>
+## Installation
 
-        <h2>Synthesizing General Table Descriptions</h2>
-        <p><span class="filename">gen_table_description.py</span> combines routine-specific descriptions, query examples, and table structure into a unified description per table using <span class="filename">AzureOpenAIClient</span>. Processed in batches of 50, these are stored in the metadata.</p>
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/text-to-sql.git
+   cd text-to-sql
+   ```
 
-        <h2>Crafting General SQL Query Examples</h2>
-        <p><span class="filename">gen_table_query_example.py</span> produces a representative SELECT query and description per table with <span class="filename">AzureOpenAIClient</span>, incorporating aliases and typical joins. These are saved to reflect common usage patterns.</p>
+2. **Set Up Environment**
+   ```bash
+   conda create --name text-to-sql python=3.9
+   conda activate text-to-sql
+   python -m pip install cx_Oracle openai python-dotenv tiktoken numpy scipy
+   ```
 
-        <h2>Enhancing Table Selection with Embeddings</h2>
-        <p><span class="filename">gen_table_embeddings.py</span> adds vector embeddings to the metadata using <span class="filename">AzureOpenAIClient</span> with text-embedding-ada-002. Combining table name, alias, and description, embeddings enable similarity-based table matching.</p>
+3. **Configure Oracle Instant Client**
+   - Download and extract [Oracle Instant Client](https://www.oracle.com/database/technologies/instant-client.html) (e.g., to `/opt/oracle/instantclient_23_7`).
+   - Set the library path:
+     ```bash
+     export LD_LIBRARY_PATH=/opt/oracle/instantclient_23_7:$LD_LIBRARY_PATH
+     ```
 
-        <h2>Converting Text to SQL with Iterative Refinement</h2>
-        <p><span class="filename">text_to_sql.py</span> transforms a text request into SQL by refactoring the input with gpt-4o, matching tables via embedding similarity, selecting a primary table, and generating an initial query. It refines this iteratively (up to three levels) with foreign key joins, finalizing the SQL with gpt-4o. Outputs use implicit syntax and are logged to <span class="filename">sql_logs/</span>.</p>
+4. **Set Environment Variables**
+   - Create a `.env` file in the root directory:
+     ```
+     AZURE_OPENAI_API_KEY=your-api-key
+     AZURE_OPENAI_ENDPOINT=your-endpoint
+     ```
 
-        <h2>Challenges and Solutions</h2>
-        <p>Parsing PL/SQL required strong regex patterns, while LLM costs were managed with a $5 cap per script via <span class="filename">AzureOpenAIClient</span>. Output lengths were constrained to fit database fields, batching addressed large datasets, and embeddings paired with foreign key refinement handled multi-table queries.</p>
+5. **Database Setup**
+   - Run `tables_ddl_2.sql` to create required tables (`DB_ROUTINE_METADATA`, `DB_TABLE_METADATA`, `DB_ROUTINE_TABLE_USAGE`).
 
-        <h2>Results and Future Potential</h2>
-        <p>The system generates accurate SQL queries, supported by rich metadata and embeddings. Future improvements might add subquery support, real-time execution, or multi-language capabilities.</p>
+## Usage
 
-        <h2>Conclusion</h2>
-        <p>This pipeline shows how Python and LLMs can connect text to SQL, using PL/SQL routines as a foundation for natural language queries. With <span class="filename">AzureOpenAIClient</span> streamlining API interactions and <span class="filename">sql_maker_flow_2.py</span> driving the conversion, developers can adapt this approach to their databases or enhance it with custom tweaks. Dive into the code and bring text-to-SQL to your projects!</p>
-    </div>
-</body>
-</html>
+Run the pipeline sequentially to process PL/SQL files and generate SQL from text queries:
+
+```bash
+# Extract PL/SQL routines
+python split_save_pkg.py your_plsql_file.sql out
+
+# Populate routine metadata
+python populate_rma.py
+
+# Link tables to routines
+python populate_link_table_rte.py
+
+# Generate routine-specific descriptions
+python pop_db_routine_table_usage_description.py
+
+# Add routine-specific SQL examples
+python pop_db_routine_table_usage_sql_example.py
+
+# Synthesize general table descriptions
+python gen_table_description.py
+
+# Create general SQL query examples
+python gen_table_query_example.py
+
+# Generate table embeddings
+python gen_table_embeddings.py
+
+# Convert text to SQL
+python sql_maker_flow_2.py
+```
+
+Example request in `sql_maker_flow_2.py`:
+```python
+request = "Ali je oseba Jože Mikič kaj dolžna? Poglej v pfr_postavka_fr_dokumenta. Breme >0, knjizni_saldo_vrstice > 0"
+```
+
+Output SQL is logged to `sql_logs/`.
+
+## Project Structure
+
+- `split_save_pkg.py`: Parses PL/SQL into individual `.SQL` files.
+- `populate_rma.py`: Loads routine metadata into the database.
+- `populate_link_table_rte.py`: Links tables to routines with usage frequency.
+- `pop_db_routine_table_usage_description.py`: Generates routine-specific table descriptions.
+- `pop_db_routine_table_usage_sql_example.py`: Adds routine-specific SQL examples.
+- `gen_table_description.py`: Synthesizes general table descriptions.
+- `gen_table_query_example.py`: Creates general SQL query examples.
+- `gen_table_embeddings.py`: Generates table embeddings.
+- `sql_maker_flow_2.py`: Converts text to SQL with iterative refinement.
+- `azure_openai_client.py`: Manages Azure OpenAI API interactions.
+- `tables_ddl_2.sql`: Database schema setup.
+
+## Blog Post
+
+Learn more about the project’s design and implementation in [this blog post](https://nukitaokamu.github.io/blog/posts/2025-03-21-turning-text-into-sql.html).
+
+## Challenges and Solutions
+
+- **PL/SQL Parsing**: Solved with robust regex and token counting.
+- **Cost Control**: Enforced $5 cap per script via `AzureOpenAIClient`.
+- **Multi-Table Queries**: Handled with embeddings and foreign key refinement.
+
+## Future Enhancements
+
+- Support for subqueries and complex SQL constructs.
+- Real-time query execution against the database.
+- Multi-language request handling.
+
+## Contributing
+
+Contributions are welcome! Fork the repo, create a branch, and submit a pull request with your improvements.
