@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exploring PostgreSQL with Claude: An MCP-Powered Server</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 2.2em;
+            color: #1a3c5e;
+            border-bottom: 3px solid #1a3c5e;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            font-size: 1.6em;
+            color: #2c5282;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        p {
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        .filename {
+            font-family: 'Courier New', monospace;
+            background-color: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #2d3748;
+        }
+        a {
+            color: #3182ce;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Exploring PostgreSQL with Claude: An MCP-Powered Server</h1>
+
+        <h2>Introduction</h2>
+        <p>Interacting with a PostgreSQL database using natural language can streamline data exploration, especially when paired with a Large Language Model (LLM) like Claude. This project introduces an MCP (Model Context Protocol) server that bridges PostgreSQL and Claude Desktop, enabling users to query database schemas and data through simple text prompts. Built with Python and the MCP SDK, it’s a lightweight yet powerful tool for developers and data enthusiasts.</p>
+
+        <h2>Project Overview</h2>
+        <p>The <span class="filename">mcp_server_postgresql.py</span> script connects to a PostgreSQL database, exposing its structure and contents via MCP resources and tools. It integrates with Claude Desktop, allowing natural language queries like “What tables are in my database?” or “Run a SQL query for me.” Configuration is managed securely with a <span class="filename">.env</span> file, keeping credentials safe. A companion script, <span class="filename">test_mcp_server_postgresql.py</span>, helps verify functionality outside the app.</p>
+
+        <h2>Technical Breakdown</h2>
+
+        <h2>Setting Up the Environment</h2>
+        <p>The project uses Python 3.11 and relies on <span class="filename">sqlalchemy</span>, <span class="filename">psycopg2</span>, <span class="filename">mcp</span>, and <span class="filename">python-dotenv</span>. A Conda environment is recommended for isolation, with dependencies installed via <span class="filename">conda</span> and <span class="filename">pip</span>. Database credentials are loaded from a <span class="filename">.env</span> file, ensuring sensitive info stays out of the codebase.</p>
+
+        <h2>Defining MCP Resources</h2>
+        <p>Two resources provide schema access: <span class="filename">schema://tables</span> returns a JSON list of all tables, while <span class="filename">schema://schema/{table_name}</span> delivers detailed schema info (columns, types, keys) for a specific table. These are built using <span class="filename">sqlalchemy.inspect</span> to fetch metadata dynamically.</p>
+
+        <h2>Implementing MCP Tools</h2>
+        <p>Four tools enhance interaction:
+            <ul>
+                <li><span class="filename">all_table_names</span>: Lists all tables as a comma-separated string.</li>
+                <li><span class="filename">filter_table_names</span>: Filters tables by a search term.</li>
+                <li><span class="filename">schema_definitions</span>: Provides detailed schema details for specified tables.</li>
+                <li><span class="filename">execute_query</span>: Runs read-only SQL queries with formatted output.</li>
+            </ul>
+        These leverage <span class="filename">sqlalchemy</span> for database operations and are decorated with MCP’s <span class="filename">@mcp.tool</span> syntax.</p>
+
+        <h2>Securing Credentials with .env</h2>
+        <p>The <span class="filename">python-dotenv</span> library loads database credentials (username, password, host, database name) from a <span class="filename">.env</span> file. A <span class="filename">.env.example</span> template guides users, while <span class="filename">.gitignore</span> ensures the real <span class="filename">.env</span> stays private. The script constructs the connection URL dynamically, enhancing portability.</p>
+
+        <h2>Testing with a Client Script</h2>
+        <p><span class="filename">test_mcp_server_postgresql.py</span> is a standalone client that connects to the server, lists available tools, and tests <span class="filename">all_table_names</span>. It uses MCP’s <span class="filename">ClientSession</span> and prints results, making it easy to verify setup before Claude integration.</p>
+
+        <h2>Integrating with Claude Desktop</h2>
+        <p>To connect to Claude Desktop, the server’s path and Conda Python executable are added to <span class="filename">claude_desktop_config.json</span>. Once restarted, Claude recognizes the server, displaying a hammer icon. Users can then ask natural language questions, with Claude invoking the appropriate tools or resources.</p>
+
+        <h2>Challenges and Solutions</h2>
+        <p>Ensuring secure credential management was key—using <span class="filename">.env</span> solved this elegantly. Query result truncation (at 4000 characters by default) was handled with an environment variable override. Compatibility with Claude’s stdio transport required careful environment setup, resolved by pointing to the Conda Python path.</p>
+
+        <h2>Results and Future Potential</h2>
+        <p>The server successfully exposes PostgreSQL databases to Claude, enabling queries like “Show me the schema for my users table” or “Run SELECT * FROM orders LIMIT 10.” Future enhancements could include write support (with caution), caching for frequent queries, or integration with other databases like MySQL.</p>
+
+        <h2>Conclusion</h2>
+        <p>This MCP server demonstrates how Python and the MCP SDK can bridge PostgreSQL and LLMs, making database exploration intuitive. With <span class="filename">mcp_server_postgresql.py</span> driving the server and <span class="filename">test_mcp_server_postgresql.py</span> for validation, it’s a practical tool for developers. Check out the full project on GitHub at <a href="https://github.com/yourusername/mcp-server-postgresql/">https://github.com/yourusername/mcp-server-postgresql/</a>—clone it, tweak it, or contribute to take your database interactions to the next level!</p>
+    </div>
+</body>
+</html>
